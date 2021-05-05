@@ -1,0 +1,1008 @@
+---
+title: "Structure Summary Outputs"
+author: "Sam Graf"
+date: "3/23/2021"
+output: pdf_document
+---
+# LV data
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(knitr)
+library(here)
+
+RA <- read.csv(here("UAR_RapidAssessmentforStructures_RInput_2020_ER_SG.csv"))
+
+LV <- read.csv("LogVaneAnalysis_RInput_2020_ver4.csv")
+LV$Integrity <- as.numeric(LV$Integrity)
+LV$Deposition <- as.numeric(LV$Deposition)
+LV$Erosion <- as.numeric(LV$Erosion)
+
+#removes 3 strctures by this method
+max_scores <- LV %>%
+  
+  filter(Integrity != "Removed") %>%
+  group_by(Num, LV_Angle, LV_Slope,Associated_Residual_Pool,Morphology_Pre) %>%
+  summarise(max_int_score = max(Integrity))
+
+max_scores %>%
+  group_by(max_int_score) %>%
+  count(max_int_score)
+
+
+```
+
+```{r  first year impairemnet functions, include = FALSE}
+#for erosion, deposition and rootwads, the scores go up to 5
+find_first_year_of_impairment_integrity <- function (RA_data) {
+  RA_data$fir_imp_yr_integrity <- 0 ##needs to be outside the for loop
+  for (str_num in unique(RA_data$Num)) {
+    #print(str_num)
+    #finds how many rows the structure was iagnosed with 3 or 4
+    impaired_rows <- which((RA_data$Integrity == 3 | RA_data$Integrity == 4) & RA_data$Num == str_num) #makes vector of which rows a specific structure was impaired or failed
+    #print(length(impaired_rows))
+    
+    #if the length of that vector is 0 then it 
+    if (length(impaired_rows > 0)) {
+      #print(c("This structure was impaired or failed"))
+      minval <- min(impaired_rows)
+      #print(minval)
+      RA_data[minval, c("fir_imp_yr_integrity")] <- 1
+      print(paste("first impaired year: ", RA_data$Year[minval], "entered for", str_num, "in row ", minval))
+      
+      
+    }
+    else {
+      print(paste(str_num, "structure wasnt impaired ever"))
+      # RA_data[minval, c("fir_imp_yr")] <- 0
+    }
+    
+  }
+  return (RA_data)
+}
+
+find_first_year_of_impairment_erosion <- function (RA_data) {
+  RA_data$fir_imp_yr_erosion <- 0 ##needs to be outside the for loop
+  for (str_num in unique(RA_data$Num)) {
+    #print(str_num)
+    #finds how many rows the structure was iagnosed with 3 or 4
+    impaired_rows <- which((RA_data$Erosion == 3 | RA_data$Erosion == 4 | RA_data$Erosion == 5) & RA_data$Num == str_num) #makes vector of which rows a specific structure was impaired or failed
+    #print(length(impaired_rows))
+    
+    #if the length of that vector is 0 then it 
+    if (length(impaired_rows > 0)) {
+      #print(c("This structure was impaired or failed"))
+      minval <- min(impaired_rows)
+      #print(minval)
+      RA_data[minval, c("fir_imp_yr_erosion")] <- 1
+      print(paste("first impaired erosion year: ", RA_data$Year[minval], "entered for structure ", str_num, "in row ", minval))
+      
+      
+    }
+    else {
+      print(paste(str_num, "structure wasnt impaired by erosion ever"))
+      # RA_data[minval, c("fir_imp_yr")] <- 0
+    }
+    
+  }
+  return (RA_data)
+}
+
+find_first_year_of_impairment_deposition <- function (RA_data) {
+  RA_data$fir_imp_yr_deposition <- 0 ##needs to be outside the for loop
+  for (str_num in unique(RA_data$Num)) {
+    #print(str_num)
+    #finds how many rows the structure was iagnosed with 3 or 4
+    impaired_rows <- which((RA_data$Deposition == 3 | RA_data$Deposition == 4| RA_data$Deposition == 5) & RA_data$Num == str_num) #makes vector of which rows a specific structure was impaired or failed
+    #print(length(impaired_rows))
+    
+    #if the length of that vector is 0 then it 
+    if (length(impaired_rows > 0)) {
+      #print(c("This structure was impaired or failed"))
+      minval <- min(impaired_rows)
+      #print(minval)
+      RA_data[minval, c("fir_imp_yr_deposition")] <- 1
+      print(paste("first impaired Deposition year: ", RA_data$Year[minval], "entered for", str_num, "in row ", minval))
+      
+      
+    }
+    else {
+      print(paste(str_num, "structure wasnt impaired Deposition ever"))
+      # RA_data[minval, c("fir_imp_yr")] <- 0
+    }
+    
+  }
+  return (RA_data)
+}
+
+find_first_year_of_impairment_Rootwad <- function (RA_data) {
+  RA_data$fir_imp_yr_rootwad <- 0 ##needs to be outside the for loop
+  for (str_num in unique(RA_data$Num)) {
+    #print(str_num)
+    #finds how many rows the structure was iagnosed with 3 or 4
+    impaired_rows <- which((RA_data$Rootwad_Performance == 3 | RA_data$Rootwad_Performance == 4 | RA_data$Rootwad_Performance == 5) & RA_data$Num == str_num) #makes vector of which rows a specific structure was impaired or failed
+    #print(length(impaired_rows))
+    
+    #if the length of that vector is 0 then it 
+    if (length(impaired_rows > 0)) {
+      #print(c("This structure was impaired or failed"))
+      minval <- min(impaired_rows)
+      #print(minval)
+      RA_data[minval, c("fir_imp_yr_rootwad")] <- 1
+      print(paste("first impaired Rootwad year: ", RA_data$Year[minval], "entered for", str_num, "in row ", minval))
+      
+      
+    }
+    else {
+      print(paste(str_num, "structure wasnt impaired Rootwad ever"))
+      # RA_data[minval, c("fir_imp_yr")] <- 0
+    }
+    
+  }
+  return (RA_data)
+}
+
+
+
+```
+
+Number of log vanes scoring 3 or higher based on Pre existing Morphology
+```{r, echo = FALSE}
+x <- max_scores %>%
+  mutate(failed = case_when(
+    max_int_score == 3 | max_int_score == 4 ~ TRUE,
+    max_int_score == 1 | max_int_score == 2 ~ FALSE
+  )) %>%
+  group_by(Morphology_Pre, failed) %>%
+  summarize(percent = 100* (n()/length(unique(max_scores$Num))))
+kable(x, caption = "Log Vanes Scoring >= 3 by Pre Existing Morphology")
+```
+
+Number of Log Vanes scoring 3 or higher based on pre existing morphology by Year; denominator is total number of LV (41)
+18 LV were diagnosed 3 or 4 at some point during monitoring.
+
+```{r, include = FALSE}
+LV <- find_first_year_of_impairment_integrity(LV)
+
+y1 <- LV %>%
+  group_by(Year, Morphology_Pre) %>%
+  summarise(new_impaired = sum(fir_imp_yr_integrity), perc_new_impaired = round((100*(new_impaired/(length(unique(LV$Num))))),2))
+
+```
+
+```{r, echo = FALSE}
+
+y1 %>%
+  ggplot(aes(x = Year, y = perc_new_impaired)) +
+  geom_bar(stat = "identity", position = "dodge", aes(fill = Morphology_Pre)) +
+  theme_classic() +
+  labs(title = "New Structure 3s and 4s by Year", y = "% Newly Impaired", x = "Year")
+
+y1 <- y1 %>%
+  select(-new_impaired) %>%
+  pivot_wider(names_from = Year, values_from = perc_new_impaired)
+
+
+
+kable(y1, caption = "Log Vane Failures by Year and Pre-existing Morphology")
+
+```
+# RA Data
+## Intact Structures
+
+```{r, include = FALSE}
+y <- RA
+rtwads <- y %>%
+  filter(!is.na(Rootwad_Performance))
+rtwads_structures <- length(unique(rtwads$Num))
+
+###Structures still intact: integrity
+still_intact_integrity <- y %>%
+  filter(!is.na(Integrity)) %>%
+  mutate(still_intact = case_when(
+    Integrity == 1 | Integrity == 2 ~ 1,
+    Integrity == 3 | Integrity == 4 ~ 0
+  )) %>%
+  count(Year, still_intact) 
+
+x4 <- still_intact_integrity %>%
+  group_by(Year) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_integrity2 <- left_join(still_intact_integrity, x4, by = "Year")
+  
+
+#mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+#final [ivot wider table to later join]
+still_intact_integrity3 <- still_intact_integrity2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+###Depositon
+still_intact_Deposition <- y %>%
+  filter(!is.na(Deposition)) %>%
+  mutate(still_intact = case_when(
+    Deposition == 0 | Deposition == 1 | Deposition == 2 ~ 1,
+    Deposition == 3 | Deposition == 4 | Deposition == 5 ~ 0
+  )) %>%
+  count(Year, still_intact) 
+
+x4 <- still_intact_Deposition %>%
+  group_by(Year) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_Deposition2 <- left_join(still_intact_Deposition, x4, by = "Year")
+
+
+#final pivot wider table to later join
+still_intact_Deposition3 <- still_intact_Deposition2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+###Erosion
+still_intact_Erosion <- y %>%
+  filter(!is.na(Erosion)) %>%
+  mutate(still_intact = case_when(
+    Erosion == 0 | Erosion == 1 | Erosion == 2 ~ 1,
+    Erosion == 3 | Erosion == 4 | Erosion == 5 ~ 0
+  )) %>%
+  count(Year, still_intact) 
+
+x4 <- still_intact_Erosion %>%
+  group_by(Year) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_Erosion2 <- left_join(still_intact_Erosion, x4, by = "Year")
+
+
+#final pivot wider table to later join
+still_intact_Erosion3 <- still_intact_Erosion2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+###Rootwad
+still_intact_rootwad <- y %>%
+  filter(!is.na(Rootwad_Performance)) %>%
+  mutate(still_intact = case_when(
+    Rootwad_Performance == 0 | Rootwad_Performance == 1 | Rootwad_Performance == 2 ~ 1,
+    Rootwad_Performance == 3 | Rootwad_Performance == 4 | Rootwad_Performance == 5 ~ 0
+  )) %>%
+  count(Year, still_intact) 
+
+#don't need this part; theres 22 structures measured every year for wood toe
+# x4 <- still_intact_rootwad %>%
+#   group_by(Year) %>%
+#   summarize(total_structures = sum(n)) %>%
+#   ungroup()
+# 
+# still_intact_rootwad2 <- left_join(still_intact_rootwad, x4, by = "Year")
+
+
+#final pivot wider table to later join
+#case here where rootwad got a 4 then dropped back down; structure 75
+still_intact_rootwad3 <- still_intact_rootwad %>%
+  mutate(Percent = round(100*(n/rtwads_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+
+#binding rows
+x <- bind_rows(still_intact_integrity3, still_intact_Deposition3, still_intact_Erosion3, still_intact_rootwad3)
+x$still_intact[1] <- "Integrity"
+x$still_intact[2] <- "Deposition"
+x$still_intact[3] <- "Erosion"
+x$still_intact[4] <- "Rootwad"
+names(x)[1] <- "Rating"
+
+
+```
+Intact Structures by Year
+```{r, echo = FALSE}
+kable(x, caption = "Percent Intact by Year for Rating Types")
+```
+
+### Intact Structures by Structure Type
+```{r, include = FALSE}
+## intact
+
+still_intact_integrity_structures <- y %>%
+  filter(!is.na(Integrity)) %>%
+  mutate(still_intact = case_when(
+    Integrity == 1 | Integrity == 2 ~ 1,
+    Integrity == 3 | Integrity == 4 ~ 0
+  )) %>%
+  count(Year, still_intact, Structure_Type) 
+
+x4 <- still_intact_integrity_structures %>%
+  group_by(Year, Structure_Type) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_integrity_structures2 <- left_join(still_intact_integrity_structures, x4, by = c("Year", "Structure_Type"))
+
+
+#mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+#final [ivot wider table to later join]
+still_intact_integrity_structures3 <- still_intact_integrity_structures2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+##Deposition
+
+still_intact_Deposition_structures <- y %>%
+  filter(!is.na(Deposition)) %>%
+  mutate(still_intact = case_when(
+    Deposition == 0 | Deposition == 1 | Deposition == 2 ~ 1,
+    Deposition == 3 | Deposition == 4 | Deposition == 5 ~ 0
+  )) %>%
+  count(Year, still_intact, Structure_Type) 
+
+x4 <- still_intact_Deposition_structures %>%
+  group_by(Year, Structure_Type) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_Deposition_structures2 <- left_join(still_intact_Deposition_structures, x4, by = c("Year", "Structure_Type"))
+
+
+#mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+#final [ivot wider table to later join]
+still_intact_Deposition_structures3 <- still_intact_Deposition_structures2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+##Erosion
+
+still_intact_Erosion_structures <- y %>%
+  filter(!is.na(Erosion)) %>%
+  mutate(still_intact = case_when(
+    Erosion == 0 | Erosion == 1 | Erosion == 2 ~ 1,
+    Erosion == 3 | Erosion == 4 | Erosion == 5 ~ 0
+  )) %>%
+  count(Year, still_intact, Structure_Type) 
+
+x4 <- still_intact_Erosion_structures %>%
+  group_by(Year, Structure_Type) %>%
+  summarize(total_structures = sum(n)) %>%
+  ungroup()
+
+still_intact_Erosion_structures2 <- left_join(still_intact_Erosion_structures, x4, by = c("Year", "Structure_Type"))
+
+
+#mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+#final [ivot wider table to later join]
+still_intact_Erosion_structures3 <- still_intact_Erosion_structures2 %>%
+  mutate(Percent = round(100*(n/total_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,-total_structures) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+#rootwad
+still_intact_Rootwad_structures <- y %>%
+  filter(!is.na(Rootwad_Performance)) %>%
+  mutate(still_intact = case_when(
+    Rootwad_Performance == 0 | Rootwad_Performance == 1 | Rootwad_Performance == 2 ~ 1,
+    Rootwad_Performance == 3 | Rootwad_Performance == 4 | Rootwad_Performance == 5 ~ 0
+  )) %>%
+  count(Year, still_intact, Structure_Type) 
+
+# x4 <- still_intact_Rootwad_structures %>%
+#   group_by(Year, Structure_Type) %>%
+#   summarize(total_structures = sum(n)) %>%
+#   ungroup()
+# 
+# still_intact_Rootwad_structures2 <- left_join(still_intact_Rootwad_structures, x4, by = c("Year", "Structure_Type"))
+
+
+#mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+#final [ivot wider table to later join]
+still_intact_Rootwad_structures3 <- still_intact_Rootwad_structures %>%
+  mutate(Percent = round(100*(n/rtwads_structures),2)) %>%
+  filter(still_intact == 1) %>%
+  select(-n,) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+## Summary column
+
+
+#INTEGIRTY SUMMARY COLUMN
+# x <- RA %>%
+#   mutate(failed = ifelse((Integrity >= 3), 1, 0))   # | is OR operator; Integrity == 3 | if we want to do "impaired" instead of failed
+
+x <- RA
+
+x <- find_first_year_of_impairment_integrity(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_integrity))
+#checking to make sure we have 137 total structures
+test1 <- x1 %>%
+  ungroup() %>%
+  select(-Year,-total_impaired) %>%
+  distinct()
+sum(test1$total_str_num)
+
+# group_by(Structure_Type) %>%
+# summarize(sum1 = sum(total_str_num))
+integrity_structures_sum <- x1 %>%
+  group_by(Structure_Type) %>%
+  summarize(total_allyrs = sum(total_impaired),
+            total_intact_structures = (total_str_num - total_allyrs),
+            Percent_Intact = round(100*(total_intact_structures / total_str_num),2)) %>%
+  distinct() %>%
+  select(-total_allyrs, -total_intact_structures)
+
+still_intact_integrity_structures4 <- left_join(still_intact_integrity_structures3, integrity_structures_sum, by = "Structure_Type")
+
+still_intact_integrity_structures4 <- still_intact_integrity_structures4 %>%
+  select(-still_intact)
+
+
+#DEPOSITION SUMMARY COLUMN
+x <- RA
+
+x <- find_first_year_of_impairment_deposition(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_deposition))
+
+deposition_structures_sum <- x1 %>%
+  group_by(Structure_Type) %>%
+  summarize(total_allyrs = sum(total_impaired),
+            total_intact_structures = (total_str_num - total_allyrs),
+            percentage = round(100*(total_intact_structures / total_str_num),2)) %>%
+  distinct() %>%
+  select(-total_allyrs, -total_intact_structures)
+
+still_intact_Deposition_structures4 <- left_join(still_intact_Deposition_structures3, deposition_structures_sum, by = "Structure_Type")
+
+still_intact_Deposition_structures4 <- still_intact_Deposition_structures4 %>%
+  select(-still_intact)
+
+#EROSION SUMMARY COLUMN
+x <- RA
+
+x <- find_first_year_of_impairment_erosion(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_erosion))
+
+erosion_structures_sum <- x1 %>%
+  group_by(Structure_Type) %>%
+  summarize(total_allyrs = sum(total_impaired),
+            total_intact_structures = (total_str_num - total_allyrs),
+            percentage = round(100*(total_intact_structures / total_str_num),2)) %>%
+  distinct() %>%
+  select(-total_allyrs, -total_intact_structures)
+
+still_intact_Erosion_structures4 <- left_join(still_intact_Erosion_structures3, erosion_structures_sum, by = "Structure_Type")
+
+still_intact_Erosion_structures4 <- still_intact_Erosion_structures4 %>%
+  select(-still_intact)
+
+#ROOTWAD SUMMARY COLUMN
+x <- find_first_year_of_impairment_Rootwad(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_rootwad))
+
+rootwad_structures_sum <- x1 %>%
+  group_by(Structure_Type) %>%
+  summarize(total_allyrs = sum(total_impaired),
+            total_intact_structures = (total_str_num - total_allyrs),
+            percentage = round(100*(total_intact_structures / total_str_num),2)) %>%
+  distinct() %>%
+  select(-total_allyrs, -total_intact_structures)
+
+still_intact_Rootwad_structures4 <- left_join(still_intact_Rootwad_structures3, rootwad_structures_sum, by = "Structure_Type")
+
+still_intact_Rootwad_structures4 <- still_intact_Rootwad_structures4 %>%
+  select(-still_intact)
+
+```
+Integrity
+```{r, echo = FALSE}
+kable(still_intact_integrity_structures4, caption = "Integrity of Structures by Year")
+```
+Deposition
+```{r, echo = FALSE}
+kable(still_intact_Deposition_structures4, caption = "Deposition of Structures by Year")
+```
+Erosion
+```{r, echo = FALSE}
+kable(still_intact_Erosion_structures4, caption = "Erosion of Structures by Year")
+```
+Rootwad
+```{r, echo = FALSE}
+kable(still_intact_Rootwad_structures4, caption = "Rootwad Performance of Structures by Year")
+```
+
+
+
+## Structure Failures
+```{r, echo = FALSE, include = FALSE}
+#RA <- read.csv(file.choose())
+x <- RA %>%
+  mutate(YAC = Year-2013, #gets number of years after 2013 the strucutre is
+         failed = ifelse((Integrity == 4 | Integrity == 3), 1, 0))   # | is OR operator; Integrity == 3 | if we want to do "impaired" instead of failed
+
+y <- find_first_year_of_impairment_integrity(x)
+y <- find_first_year_of_impairment_deposition(y)
+y <- find_first_year_of_impairment_erosion(y)
+y <- find_first_year_of_impairment_Rootwad(y)
+
+master1 <- y
+
+
+
+###integrity: gives first years a structure was impaired (3 or 4)
+integrity1 <- y %>%
+  filter(`fir_imp_yr_integrity` == TRUE ) %>%
+  group_by(Year) %>%
+  count(fir_imp_yr_integrity == 1) %>%
+  mutate(Percent = round(100 * (n / length(unique(y$Num))),2)) #adding this row will get a percentage of all structures
+
+
+integrity2 <- integrity1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+
+###Deposition
+deposition1 <- y %>%
+  filter(fir_imp_yr_deposition == TRUE ) %>%
+  group_by(Year) %>%
+  count(fir_imp_yr_deposition == 1) %>%
+  mutate(Percent = round(100 * (n / length(unique(y$Num))),2)) #adding this row will get a percentage of all structures
+
+deposition2 <- deposition1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+
+###erosion
+erosion1 <- y %>%
+  filter(fir_imp_yr_erosion == TRUE ) %>%
+  group_by(Year) %>%
+  count(fir_imp_yr_erosion == 1) %>%
+  mutate(Percent = round(100 * (n / length(unique(y$Num))),2)) #adding this row will get a percentage of all structures
+
+erosion2 <- erosion1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+
+###rootwad
+rtwads <- y %>%
+  filter(!is.na(Rootwad_Performance))
+rtwads_structures <- length(unique(rtwads$Num))
+
+
+rootwad1 <- y %>%
+  filter(fir_imp_yr_rootwad == TRUE ) %>%
+  group_by(Year) %>%
+  count(fir_imp_yr_rootwad == 1) %>%
+  mutate(Percent = round(100 * (n / rtwads_structures),2)) #adding this row will get a percentage of all structures
+
+
+
+rootwad2 <- rootwad1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+
+#binding rows
+x <- bind_rows(integrity2, deposition2, erosion2, rootwad2)
+x <- x %>%
+  mutate(Ratings = case_when(`fir_imp_yr_integrity == 1`== TRUE ~ "Integrity",
+                   `fir_imp_yr_deposition == 1`== TRUE ~ "Deposition",
+                   `fir_imp_yr_erosion == 1`== TRUE ~ "Erosion",
+                   `fir_imp_yr_rootwad == 1`== TRUE ~ "Rootwad"))
+
+x1 <- x %>%
+  select(Ratings, `2014`,`2015`, `2016`,`2017`,`2018`,`2020`)
+
+x1[is.na(x1)] <- 0
+x1 <- x1 %>%
+  mutate(notes = "ratings >= 3")
+
+```
+Table that shows new scores of 3 or higher for each type of Rating in each Year.
+Denominator is total structures Erosion, Integrity and Deposition (137). Denominator is total rootwad structures for rootwad (22).
+After  structure is counted as "failed" for a year, it's not counted again
+```{r, echo = FALSE}
+kable(x1, caption = "New Failures for Rating Types")
+```
+
+
+
+## RA Failed Structures Summary of Ratings by Structure Types
+
+Integrity: Denominator is structures of that same type. 
+```{r, include= FALSE}
+x <- RA
+x <- find_first_year_of_impairment_integrity(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_integrity))
+
+x2 <- x1 %>%
+  mutate(Percent = round(100*(total_impaired/total_str_num),2))
+
+x3 <- x2 %>%
+  select(-total_str_num, -total_impaired) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+x3 <- x3 %>%
+  mutate(Notes = "ratings >= 3")
+
+```
+
+```{r, echo = FALSE}
+
+kable(x3, caption = "Integrity Diagnoses of 3 or 4", digits = 3)
+
+```
+Deposition
+
+```{r, include = FALSE}
+x <- RA
+x <- find_first_year_of_impairment_deposition(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_deposition))
+
+x2 <- x1 %>%
+  mutate(Percent = round(100*(total_impaired/total_str_num),2))
+
+x3 <- x2 %>%
+  select(-total_str_num, -total_impaired) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+x3 <- x3 %>%
+  mutate(Notes = "ratings >= 3")
+
+```
+
+```{r, echo = FALSE}
+
+kable(x3, caption = "Deposition Diagnoses of 3 or 4 or 5", digits = 3)
+
+```
+
+Erosion
+```{r, include = FALSE}
+x <- RA
+x <- find_first_year_of_impairment_erosion(x)
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_erosion))
+
+x2 <- x1 %>%
+  mutate(Percent = round(100*(total_impaired/total_str_num),2))
+
+x3 <- x2 %>%
+  select(-total_str_num, -total_impaired) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+x3 <- x3 %>%
+  mutate(Notes = "ratings >= 3")
+```
+
+```{r, echo = FALSE}
+
+kable(x3, caption = "Erosion Diagnoses of 3 or 4 or 5", digits = 3)
+
+```
+Rootwad: Denominator is total number number of rootwad structures (22)
+```{r, include = FALSE}
+x <- RA
+rtwads <- x %>%
+  filter(!is.na(Rootwad_Performance))
+rtwads_structures <- length(unique(rtwads$Num))
+
+x <- find_first_year_of_impairment_Rootwad(rtwads)
+
+
+x1 <- x %>%
+  group_by(Year, Structure_Type) %>%
+  summarise(total_str_num = length(unique(Num)),
+            total_impaired = sum(fir_imp_yr_rootwad))
+
+x2 <- x1 %>%
+  mutate(Percent = round(100*(total_impaired/total_str_num),2))
+
+x3 <- x2 %>%
+  select(-total_str_num, -total_impaired) %>%
+  pivot_wider(names_from = Year, values_from = Percent)
+x3 <- x3 %>%
+  mutate(Notes = "ratings >= 3")
+```
+
+```{r, echo = FALSE}
+
+kable(x3, caption = "Rootwad Diagnoses of 3 or 4 or 5", digits = 3)
+
+```
+## Max Scores
+Integrity
+```{r, include = FALSE}
+x <- RA
+x1 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  select(Num, Structure_Type, Year, Integrity)
+###INTEGRITY
+###total summarized for all structures
+total <- x1 %>%
+  group_by(Structure_Type, Num) %>%
+  summarize(max_int = max(Integrity))
+
+total2 <- total %>%
+  ungroup() %>%
+  count(max_int) %>%
+  rename(Integrity = max_int,
+         Max = n) 
+
+#year by year
+x2 <- x1 %>%
+  pivot_wider(names_from = Year, values_from = Integrity) %>%
+  rowwise() %>%
+  mutate(max_int = max(c(`2014`,`2015`,`2016`,`2017`,`2018`,`2020`)))
+
+
+x2 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  count(Integrity, Year) %>%
+  pivot_wider(names_from = Year, values_from = n)
+
+# x3 <- x %>%
+#   filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+#   count(Integrity) 
+
+all_structures_max_summarized <- left_join(x2, total2, by = "Integrity")
+all_structures_max_summarized[is.na(all_structures_max_summarized)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(all_structures_max_summarized, caption = "Integrity Scores by Year")
+```
+Deposition
+```{r, include = FALSE}
+
+###DEPOSITOIN
+
+x <- RA
+x1 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  select(Num, Structure_Type, Year, Deposition)
+###total summarized for all structures
+total <- x1 %>%
+  group_by(Structure_Type, Num) %>%
+  summarize(max_dep = max(Deposition))
+
+total2 <- total %>%
+  ungroup() %>%
+  count(max_dep) %>%
+  rename(Deposition = max_dep,
+         Max = n) 
+
+#year by year
+# x2 <- x1 %>%
+#   pivot_wider(names_from = Year, values_from = Deposition) %>%
+#   rowwise() %>%
+#   mutate(max_int = max(c(`2014`,`2015`,`2016`,`2017`,`2018`,`2020`)))
+
+
+x2 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  count(Deposition, Year) %>%
+  pivot_wider(names_from = Year, values_from = n)
+
+# x3 <- x %>%
+#   filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+#   count(Integrity) 
+
+all_structures_max_summarized <- left_join(x2, total2, by = "Deposition")
+all_structures_max_summarized[is.na(all_structures_max_summarized)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(all_structures_max_summarized, caption = "Deposition Scores by Year")
+
+```
+Erosion
+```{r, include = FALSE}
+
+###Erosion
+
+x <- RA
+x1 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  select(Num, Structure_Type, Year, Erosion)
+###total summarized for all structures
+total <- x1 %>%
+  group_by(Structure_Type, Num) %>%
+  summarize(max_ero = max(Erosion))
+
+total2 <- total %>%
+  ungroup() %>%
+  count(max_ero) %>%
+  rename(Erosion = max_ero,
+         Max = n) 
+
+#year by year
+# x2 <- x1 %>%
+#   pivot_wider(names_from = Year, values_from = Erosion) %>%
+#   rowwise() %>%
+#   mutate(max_int = max(c(`2014`,`2015`,`2016`,`2017`,`2018`,`2020`)))
+
+
+x2 <- x %>%
+  filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+  count(Erosion, Year) %>%
+  pivot_wider(names_from = Year, values_from = n)
+
+# x3 <- x %>%
+#   filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+#   count(Integrity) 
+
+all_structures_max_summarized <- left_join(x2, total2, by = "Erosion")
+all_structures_max_summarized[is.na(all_structures_max_summarized)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(all_structures_max_summarized, caption = "Erosion Scores by Year")
+
+```
+Rootwad
+```{r, include = FALSE}
+
+###Rootwad
+
+x <- RA
+x1 <- x %>%
+  filter(!is.na(Rootwad_Performance)) %>%
+  select(Num, Structure_Type, Year, Rootwad_Performance)
+###total summarized for all structures
+total <- x1 %>%
+  group_by(Structure_Type, Num) %>%
+  summarize(max_roo = max(Rootwad_Performance))
+
+total2 <- total %>%
+  ungroup() %>%
+  count(max_roo) %>%
+  rename(Rootwad_Performance = max_roo,
+         Max = n) 
+
+#year by year
+# x2 <- x1 %>%
+#   pivot_wider(names_from = Year, values_from = Rootwad_Performance) %>%
+#   rowwise() %>%
+#   mutate(max_int = max(c(`2014`,`2015`,`2016`,`2017`,`2018`,`2020`)))
+
+
+x2 <- x %>%
+  filter(!is.na(Rootwad_Performance)) %>%
+  count(Rootwad_Performance, Year) %>%
+  pivot_wider(names_from = Year, values_from = n)
+
+# x3 <- x %>%
+#   filter(!is.na(Integrity) | !is.na(Deposition) | !is.na(Erosion)) %>%
+#   count(Integrity) 
+
+all_structures_max_summarized <- left_join(x2, total2, by = "Rootwad_Performance")
+all_structures_max_summarized[is.na(all_structures_max_summarized)] <- 0
+
+
+```
+
+```{r, echo = FALSE}
+kable(all_structures_max_summarized, caption = "Rootwad Scores by Year")
+
+```
+
+
+## RA max Scores Given to a structure Type 
+```{r, echo = FALSE}
+x <- RA
+max_structure_scores <- x %>%
+  filter(!is.na(Integrity)) %>%
+  group_by(Structure_Type, Year) %>%
+  summarise(max_int_score = max(Integrity))
+
+max_structure_scores %>%
+  ggplot(aes(x = Year, y = max_int_score, fill = Structure_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_classic() +
+  labs(title = "Max Integrity Scores for Structures Across Years", x = "Year", y = "Max Integrity Score")
+
+```
+
+## RA Integrity for all Structures
+
+Showing the state of structures. These don't show new diagnoses, so a structure that could have been a 3 in past years may still be a 3 in subsequent years. 
+```{r,include =FALSE}
+###Integrity andfucntion of all structures
+x <- RA
+# x1 <- x %>%
+#   group_by(Integrity, Year) %>%
+#   summarise(total = sum())
+
+x1 <- x %>%
+  filter(!is.na(Integrity)) %>%
+  count(Integrity, Year) %>%
+  mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+x2 <- x1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+x2[is.na(x2)] <- 0
+
+```
+Denominator is total structures (137)
+```{r, echo = FALSE}
+kable(x2, caption = "Integrity of all Habitat Structures")
+```
+Deposition 
+```{r, include = FALSE}
+x1 <- x %>%
+  filter(!is.na(Deposition)) %>%
+  count(Deposition, Year) %>%
+  mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+x2 <- x1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+x2[is.na(x2)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(x2, caption = "Deposition of all Habitat Structures")
+```
+Erosion
+```{r, include=FALSE}
+x1 <- x %>%
+  filter(!is.na(Erosion)) %>%
+  count(Erosion, Year) %>%
+  mutate(Percent = round(100*(n / length(unique(RA$Num))),2))
+x2 <- x1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+x2[is.na(x2)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(x2, caption = "Erosion of all Habitat Structures")
+```
+
+Rootwads: Denominator is all Rootwad structures
+```{r, include = FALSE}
+x1 <- x %>%
+  filter(!is.na(Rootwad_Performance)) %>%
+  count(Rootwad_Performance, Year) %>%
+  mutate(Percent = round(100*(n / rtwads_structures),2))
+x2 <- x1 %>%
+  select(-n) %>%
+  pivot_wider(names_from = Year,values_from = Percent)
+
+x2[is.na(x2)] <- 0
+```
+
+```{r, echo = FALSE}
+kable(x2, caption = "Rootwad Scores of all Rootwad Structures")
+```
